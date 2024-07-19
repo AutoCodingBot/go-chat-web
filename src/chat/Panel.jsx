@@ -66,7 +66,6 @@ var heartCheck = {
 class Panel extends React.Component {
     constructor(props) {
         super(props)
-        localStorage.uuid = props.match.params.user;
         this.state = {
             onlineType: 1, // 在线视频或者音频： 1视频，2音频
             video: {
@@ -95,18 +94,20 @@ class Panel extends React.Component {
      * websocket连接
      */
     connection = () => {
-        console.log("to connect...")
+        console.log("Chanel Connecting...")
         peer = new RTCPeerConnection();
         var image = document.getElementById('receiver');
-        socket = new WebSocket("ws://" + Params.IP_PORT + "/socket.io?user=" + this.props.match.params.user)
-
+        socket = new WebSocket("ws://" + Params.IP_PORT + "/socket.io?user=" + localStorage.getItem('uuid'))
+        //原先的
+        // socket = new WebSocket("ws://" + Params.IP_PORT + "/socket.io?user=" + this.props.match.params.user)
         socket.onopen = () => {
             heartCheck.start()
-            console.log("connected")
+            console.log("Chanel Connect Success")
             this.webrtcConnection()
 
             this.props.setSocket(socket);
         }
+        
         socket.onmessage = (message) => {
             heartCheck.start()
 
@@ -116,7 +117,23 @@ class Panel extends React.Component {
             reader.readAsArrayBuffer(message.data);
             reader.onload = ((event) => {
                 let messagePB = messageProto.decode(new Uint8Array(event.target.result))
-                console.log(messagePB)
+                // console.log('新消息',messagePB)
+                
+                // messagePB.messageType :0系统;1:单人;2:群
+                //play sound
+                switch (messagePB.messageType) {
+                    case 1:
+                        new Audio('/audio/notice_person.mp3').play()
+                        break;
+
+                    case 2:
+                         new Audio('/audio/notice_group.mp3').play()
+                        break;
+
+                    default:
+                        break;
+                }
+
                 if (messagePB.type === "heatbeat") {
                     return;
                 }
@@ -167,7 +184,7 @@ class Panel extends React.Component {
 
                 let avatar = this.props.chooseUser.avatar
                 if (messagePB.messageType === 2) {
-                    avatar = Params.HOST + "/file/" + messagePB.avatar
+                    avatar = messagePB.avatar ? Params.HOST + "/file/" + messagePB.avatar :`https://api.dicebear.com/9.x/pixel-art/svg?seed=${messagePB.fromUsername}`
                 }
 
                 // 文件内容，录制的视频，语音内容
@@ -360,6 +377,7 @@ class Panel extends React.Component {
         const messagePB = message.create(data)
 
         socket.send(message.encode(messagePB).finish())
+        new Audio("/audio/sent.mp3").play()
     }
 
     /**
@@ -532,7 +550,7 @@ class Panel extends React.Component {
                 </Row>
 
 
-                <Drawer width='820px' forceRender={true} title="媒体面板" placement="right" onClose={this.mediaPanelDrawerOnClose} visible={this.props.media.showMediaPanel}>
+                <Drawer width='820px' forceRender={true} title="媒体面板" placement="right" onClose={this.mediaPanelDrawerOnClose} open={this.props.media.showMediaPanel}>
                     <Tooltip title="结束视频语音">
                         <Button
                             shape="circle"
@@ -552,7 +570,7 @@ class Panel extends React.Component {
 
                 <Modal
                     title="视频电话"
-                    visible={this.state.videoCallModal}
+                    open={this.state.videoCallModal}
                     onOk={this.handleOk}
                     onCancel={this.handleCancel}
                     okText="接听"

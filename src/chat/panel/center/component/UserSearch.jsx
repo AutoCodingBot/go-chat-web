@@ -165,14 +165,14 @@ class UserSearch extends React.Component {
                         </Input.Group>
                     </Col>
                     <Col>
-                        <Dropdown overlay={menu} placement="bottomCenter" arrow>
+                        <Dropdown menu={menu} placement="bottom" arrow>
                             <PlusCircleOutlined style={{ fontSize: 22, color: 'gray', marginLeft: 3, marginTop: 5 }} />
                         </Dropdown>
                     </Col>
                 </Row>
 
 
-                <Modal title="用户信息" visible={this.state.hasUser} onCancel={this.handleCancel} okText="添加用户" footer={null}>
+                <Modal title="用户信息" open={this.state.hasUser} onCancel={this.handleCancel} okText="添加用户" footer={null}>
                     <Input.Group compact>
                         <Input.Search allowClear style={{ width: '100%' }} onSearch={this.searchUser} />
                     </Input.Group>
@@ -187,7 +187,7 @@ class UserSearch extends React.Component {
                     <Button type='primary' onClick={this.joinGroup} disabled={this.state.queryUser.groupUuid == null || this.state.queryUser.groupUuid === ''}>添加群</Button>
                 </Modal>
 
-                <Modal title="创建群" visible={this.state.showCreateGroup} onCancel={this.handleCancelGroup} onOk={this.createGroup} okText="创建群">
+                <Modal title="创建群" open={this.state.showCreateGroup} onCancel={this.handleCancelGroup} onOk={this.createGroup} okText="创建群">
                     <Form
                         name="groupForm"
                         ref={this.groupForm}

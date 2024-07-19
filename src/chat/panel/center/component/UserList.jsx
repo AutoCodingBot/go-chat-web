@@ -1,172 +1,151 @@
-import React from 'react';
-import {
-    List,
-    Badge,
-    Avatar,
-} from 'antd';
-import {
-    FileOutlined,
-} from '@ant-design/icons';
-
+import React, { useState,useCallback} from 'react';
+import { List, Badge, Avatar } from 'antd';
+import { FileOutlined } from '@ant-design/icons';
 import moment from 'moment';
 import InfiniteScroll from 'react-infinite-scroll-component';
-import { connect } from 'react-redux'
-import { actions } from '../../../redux/module/panel'
-import * as Params from '../../../common/param/Params'
+import { useDispatch, useSelector } from 'react-redux';
+import { actions } from '../../../redux/module/panel';
+import * as Params from '../../../common/param/Params';
 import { axiosGet } from '../../../util/Request';
 
+const UserList = () => {
+    const [chooseUser, setChooseUserState] = useState({});//当前用户card
+    const dispatch = useDispatch();
+    const userList = useSelector(state => state.panelReducer.userList);
+    // console.log('当前所在组的用户信息',userList)
+    // "data": [
+    //     {
+    //         "id": 0,
+    //         "uuid": "28353ed6-5966-4804-9c52-9b00abd4401e",
+    //         "username": "eric",
+    //         "password": "",
+    //         "nickname": "",
+    //         "avatar": "5f9f6ad8-bd9a-4a8d-a9a6-b5ae0e8c0949.jpg",
+    //         "email": "",
+    //         "createAt": "0001-01-01T00:00:00Z",
+    //         "updateAt": null,
+    //         "deleteAt": 0
+    //     },
+    //     {
+    //         "id": 0,
+    //         "uuid": "c0fd020f-fa4d-4379-8f8b-f84a07fadd6a",
+    //         "username": "sam",
+    //         "password": "",
+    //         "nickname": "",
+    //         "avatar": "",
+    //         "email": "",
+    //         "createAt": "0001-01-01T00:00:00Z",
+    //         "updateAt": null,
+    //         "deleteAt": 0
+    //     }
+    // ]
 
-class UserList extends React.Component {
-    constructor(props) {
-        super(props)
-        this.state = {
-            chooseUser: {}
+    const chooseUserHandler = (value) => {
+        //value是在Switch中渲染并提交给redux管理的数据
+        // value: {hasUnreadMessage: false, username: 'sam', uuid: 'c0fd020f-fa4d-4379-8f8b-f84a07fadd6a', messageType: 1, avatar: 'http://localhost:8888/file/55f72d82-a814-41fa-bc77-08b05e9b4287.jpg'}
+        
+        //修复可重复点击用户card,导致重复发起请求的bug
+        //注意,useState是异步的,因此下面代码是合理的
+        setChooseUserState(value.username)
+        if(value.username === chooseUser){
+            return
         }
-    }
-
-    componentDidMount() {
-    }
-
-    /**
-     * 选择用户，获取对应的消息
-     * @param {选择的用户} value 
-     */
-    chooseUser = (value) => {
-        let chooseUser = {
+        const newUser = {
             toUser: value.uuid,
             toUsername: value.username,
             messageType: value.messageType,
             avatar: value.avatar
-        }
-        this.fetchMessages(chooseUser);
-        this.removeUnreadMessageDot(value.uuid);
-    }
+        };
+        fetchMessages(newUser);
+        removeUnreadMessageDot(value.uuid);
+    };
 
-    /**
-     * 获取消息
-     */
-    fetchMessages = (chooseUser) => {
-        const { messageType, toUser, toUsername } = chooseUser
-        let uuid = localStorage.uuid
+    
+    const fetchMessages = useCallback((chooseUser) => {
+        const { messageType, toUser, toUsername } = chooseUser;
+        let uuid = localStorage.uuid;
         if (messageType === 2) {
-            uuid = toUser
+            uuid = toUser;
         }
         let data = {
             Uuid: uuid,
             FriendUsername: toUsername,
             MessageType: messageType
-        }
+        };
         axiosGet(Params.MESSAGE_URL, data)
             .then(response => {
-                let comments = []
-                let data = response.data
-                if (null == data) {
-                    data = []
+                
+                if(response.data){
+                    // console.log('chat detail',response.data)
+                    const comments = response.data.map(item => ({
+                        author: item.fromUsername,
+                        avatar: item.avatar ? `${Params.HOST}/file/${item.avatar}` : `https://api.dicebear.com/9.x/pixel-art/svg?seed=${item.fromUsername}`,
+                        content: getContentByType(item.contentType, item.url, item.content),
+                        datetime: moment(item.createAt).fromNow(),
+                    }));
+                    dispatch(actions.setMessageList(comments));
+                }else{
+                    dispatch(actions.setMessageList([]));
                 }
-                for (var i = 0; i < data.length; i++) {
-                    let contentType = data[i].contentType
-                    let content = this.getContentByType(contentType, data[i].url, data[i].content)
+                dispatch(actions.setChooseUser(chooseUser));
 
-                    let comment = {
-                        author: data[i].fromUsername,
-                        avatar: Params.HOST + "/file/" + data[i].avatar,
-                        content: <p>{content}</p>,
-                        datetime: moment(data[i].createAt).fromNow(),
-                    }
-                    comments.push(comment)
-                }
 
-                this.props.setMessageList(comments);
-                // 设置选择的用户信息时，需要先设置消息列表，防止已经完成了滑动到底部动作后，消息才获取完成，导致消息不能完全滑动到底部
-                this.props.setChooseUser(chooseUser);
             });
-    }
+    }, [dispatch]);
 
-    /**
-     * 根据文件类型渲染对应的标签，比如视频，图片等。
-     * @param {文件类型} type 
-     * @param {文件地址} url 
-     * @returns 
-     */
-    getContentByType = (type, url, content) => {
-        if (type === 2) {
-            content = <FileOutlined style={{ fontSize: 38 }} />
-        } else if (type === 3) {
-            content = <img src={Params.HOST + "/file/" + url} alt="" width="150px" />
-        } else if (type === 4) {
-            content = <audio src={Params.HOST + "/file/" + url} controls autoPlay={false} preload="auto" />
-        } else if (type === 5) {
-            content = <video src={Params.HOST + "/file/" + url} controls autoPlay={false} preload="auto" width='200px' />
+    const getContentByType = (type, url, content) => {
+        switch (type) {
+            case 2: return <FileOutlined style={{ fontSize: 38 }} />;
+            case 3: return <img src={`${Params.HOST}/file/${url}`} alt="" width="150px" />;
+            case 4: return <audio src={`${Params.HOST}/file/${url}`} controls autoPlay={false} preload="auto" />;
+            case 5: return <video src={`${Params.HOST}/file/${url}`} controls autoPlay={false} preload="auto" width='200px' />;
+            default: return content;
         }
+    };
 
-        return content;
-    }
-
-    /**
-     * 查看消息后，去掉未读提醒
-     * @param {发送给对应人员的uuid} toUuid 
-     */
-    removeUnreadMessageDot = (toUuid) => {
-        let userList = this.props.userList;
-        for (var index in userList) {
-            if (userList[index].uuid === toUuid) {
-                userList[index].hasUnreadMessage = false;
-                this.props.setUserList(userList);
-                break;
+    const removeUnreadMessageDot = useCallback((toUuid) => {
+        const updatedList = userList.map(user => {
+            if (user.uuid === toUuid) {
+                return { ...user, hasUnreadMessage: false };
             }
-        }
-    }
+            return user;
+        });
+        dispatch(actions.setUserList(updatedList));
+    }, [userList, dispatch]);
 
-    render() {
+    return (
+        <div id="userList" style={{
+            height: `calc(100vh - 125px)`,
+            overflow: 'auto',
+        }}>
+            <InfiniteScroll
+                dataLength={userList.length}
+                scrollableTarget="userList"
+            >
+                <List
+                    itemLayout="horizontal"
+                    dataSource={userList}
+                    renderItem={item => (
+                        <List.Item>
+                            <List.Item.Meta
+                                style={{ paddingLeft: 30 ,backgroundColor: chooseUser === item.username ? '#87CEFA' : 'transparent'}}
+                                onClick={() => chooseUserHandler(item)}
+                                avatar={<Badge dot={item.hasUnreadMessage}><Avatar src={item.avatar} /></Badge>}
+                                title={item.username}
+                                description=""
+                                // description 用来加载最后一条消息
+                            />
+                        </List.Item>
+                    )}
+                />
+            </InfiniteScroll>
+        </div>
+    );
+};
 
-        return (
-            <>
-                <div id="userList" style={{
-                    height: document.body.scrollHeight - 125,
-                    overflow: 'auto',
-                }}>
-                    <InfiniteScroll
-                        dataLength={this.props.userList.length}
-                        scrollableTarget="userList"
-                    >
-                        <List
-                            itemLayout="horizontal"
-                            dataSource={this.props.userList}
-                            renderItem={item => (
-                                <List.Item>
-                                    <List.Item.Meta
-                                        style={{ paddingLeft: 30 }}
-                                        onClick={() => this.chooseUser(item)}
-                                        avatar={<Badge dot={item.hasUnreadMessage}><Avatar src={item.avatar} /></Badge>}
-                                        title={item.username}
-                                        description=""
-                                    />
-                                </List.Item>
-                            )}
-                        />
-                    </InfiniteScroll>
-                </div>
-            </>
-        );
-    }
-}
-
-
-function mapStateToProps(state) {
-    return {
-        chooseUser: state.panelReducer.chooseUser,
-        userList: state.panelReducer.userList,
-    }
-}
-
-function mapDispatchToProps(dispatch) {
-    return {
-        setChooseUser: (data) => dispatch(actions.setChooseUser(data)),
-        setUserList: (data) => dispatch(actions.setUserList(data)),
-        setMessageList: (data) => dispatch(actions.setMessageList(data)),
-    }
-}
-
-UserList = connect(mapStateToProps, mapDispatchToProps)(UserList)
-
-export default UserList
+export default UserList;
+/*
+useSelector 是React-Redux库中的一个Hook，
+它允许你在React函数组件中访问Redux store中的数据，而无需显式地订阅store或手动调用dispatch来更新组件状态。
+这是React函数式组件与Redux store进行交互的关键桥梁，使得你可以非常便捷地在组件中获取到全局状态。
+*/

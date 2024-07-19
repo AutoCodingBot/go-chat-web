@@ -1,19 +1,11 @@
-import React from 'react';
-import {
-    Avatar,
-    Button,
-    Dropdown,
-    Menu,
-    Modal,
-    Upload,
-    message
-} from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Avatar, Button, Dropdown, Menu, Modal, Upload, message } from 'antd';
 import { LoadingOutlined, PlusOutlined } from '@ant-design/icons';
-
-import { connect } from 'react-redux'
-import { actions } from '../../../redux/module/userInfo'
-import * as Params from '../../../common/param/Params'
+import { useDispatch, useSelector } from 'react-redux';
+import * as Params from '../../../common/param/Params';
 import { axiosGet } from '../../../util/Request';
+import { actions } from '../../../redux/module/userInfo';
+import { useNavigate } from "react-router-dom";
 
 function getBase64(img, callback) {
     const reader = new FileReader();
@@ -33,142 +25,104 @@ function beforeUpload(file) {
     return isJpgOrPng && isLt2M;
 }
 
-class UserInfo extends React.Component {
-    constructor(props) {
-        super(props)
-        let user = {}
-        if (props.user) {
-            user = props.user
-        }
-        this.state = {
-            user: user,
-            isModalVisible: false,
-            loading: false,
-            imageUrl: ''
-        }
-    }
+const UserInfo = () => {
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const user = useSelector(state => state.userInfoReducer.user);
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [imageUrl, setImageUrl] = useState('');
 
-    componentDidMount() {
-        this.fetchUserDetails();
-    }
+    useEffect(() => {
+        fetchUserDetails();
+    }, []);
 
-    /**
-     * 获取用户详情
-     */
-    fetchUserDetails = () => {
-        axiosGet(Params.USER_URL + localStorage.uuid)
-            .then(response => {
-                let user = {
-                    ...response.data,
-                    avatar: Params.HOST + "/file/" + response.data.avatar
-                }
-                this.props.setUser(user)
-            });
-    }
-
-    modifyAvatar = () => {
-        this.setState({
-            isModalVisible: true
-        })
-    }
-
-    handleCancel = () => {
-        this.setState({
-            isModalVisible: false
-        })
-    }
-
-    loginout = () => {
-        this.props.history.push("/login")
-    }
-
-    handleChange = info => {
-        if (info.file.status === 'uploading') {
-            this.setState({ loading: true });
-            return;
-        }
-        if (info.file.status === 'done') {
-            let response = info.file.response
-            if (response.code !== 0) {
-                message.error(info.file.response.msg)
-            }
-
-            let user = {
-                ...this.props.user,
-                avatar: Params.HOST + "/file/" + info.file.response.data
-            }
-            this.props.setUser(user)
-            // Get this url from response in real world.
-            getBase64(info.file.originFileObj, imageUrl =>
-                this.setState({
-                    imageUrl,
-                    loading: false,
-                }),
-            );
+    const fetchUserDetails = async () => {
+        try {
+            const response = await axiosGet(`${Params.USER_URL}${localStorage.uuid}`);
+            const updatedUser = {
+                ...response.data,
+                avatar: response.data.avatar ? `${Params.HOST}/file/${response.data.avatar}` : `https://api.dicebear.com/9.x/pixel-art/svg?seed=${response.data.username}`
+            };
+            dispatch(actions.setUser(updatedUser));
+        } catch (error) {
+            console.error('Error fetching user details:', error);
         }
     };
 
+    const modifyAvatar = () => {
+        setIsModalVisible(true);
+    };
 
-    render() {
-        const menu = (
-            <Menu>
-                <Menu.Item key={1}>
-                    <Button type='link'>{this.props.user.username}</Button>
-                </Menu.Item>
-                <Menu.Item key={2}>
-                    <Button type='link' onClick={this.modifyAvatar}>更新头像</Button>
-                </Menu.Item>
-                <Menu.Item key={3}>
-                    <Button type='link' onClick={this.loginout}>退出</Button>
-                </Menu.Item>
-            </Menu>
-        );
+    const handleCancel = () => {
+        setIsModalVisible(false);
+    };
 
-        const { loading, imageUrl } = this.state;
-        const uploadButton = (
-            <div>
-                {loading ? <LoadingOutlined /> : <PlusOutlined />}
-                <div style={{ marginTop: 8 }}>Upload</div>
-            </div>
-        );
-        return (
-            <>
-                <Dropdown overlay={menu} placement="bottomCenter" arrow>
-                    <Avatar src={this.props.user.avatar} alt={this.props.user.username} />
-                </Dropdown>
+    const loginout = () => {
+        navigate("/login");
+    };
 
-                <Modal title="更新头像" visible={this.state.isModalVisible} onCancel={this.handleCancel} footer={null}>
-                    <Upload
-                        name="file"
-                        listType="picture-card"
-                        className="avatar-uploader"
-                        showUploadList={false}
-                        action={Params.FILE_URL}
-                        beforeUpload={beforeUpload}
-                        onChange={this.handleChange}
-                        data={{ uuid: this.props.user.uuid }}
-                    >
-                        {imageUrl ? <img src={imageUrl} alt="avatar" style={{ width: '100%' }} /> : uploadButton}
-                    </Upload>
-                </Modal>
-            </>
-        );
-    }
-}
+    const handleChange = (info) => {
+        if (info.file.status === 'uploading') {
+            setLoading(true);
+            return;
+        }
+        if (info.file.status === 'done') {
+            const response = info.file.response;
+            if (response.code !== 0) {
+                message.error(response.msg);
+            } else {
+                const newUser = {
+                    ...user,
+                    avatar: `${Params.HOST}/file/${response.data}`
+                };
+                console.log('hit me',response.data)
+                dispatch(actions.setUser(newUser));
+                getBase64(info.file.originFileObj, (imageUrl) => {
+                    setImageUrl(imageUrl);
+                    setLoading(false);
+                });
+            }
+        }
+    };
 
+    const menu = (
+        <Menu>
+            <Menu.Item key="1">
+                <Button type='link'>{user.username}</Button>
+            </Menu.Item>
+            <Menu.Item key="2">
+                <Button type='link' onClick={modifyAvatar}>更新头像</Button>
+            </Menu.Item>
+            <Menu.Item key="3">
+                <Button type='link' onClick={loginout}>退出</Button>
+            </Menu.Item>
+        </Menu>
+    );
 
-function mapStateToProps(state) {
-    return {
-        user: state.userInfoReducer.user,
-    }
-}
+    return (
+        <>
+            <Dropdown menu={menu} placement="bottom" arrow>
+                <Avatar src={user.avatar} alt={user.username} />
+            </Dropdown>
 
-function mapDispatchToProps(dispatch) {
-    return {
-        setUser: (data) => dispatch(actions.setUser(data)),
-    }
-}
+            <Modal title="更新头像" open={isModalVisible} onCancel={handleCancel} footer={null}>
+                <Upload
+                    name="file"
+                    listType="picture-card"
+                    className="avatar-uploader"
+                    showUploadList={false}
+                    action={Params.FILE_URL}
+                    beforeUpload={beforeUpload}
+                    onChange={handleChange}
+                    data={{ uuid: user.uuid }}
+                >
+                    {imageUrl ? <img src={imageUrl} alt="avatar" style={{ width: '100%' }} /> : loading ? <LoadingOutlined /> : <PlusOutlined />}
+                    <div style={{ marginTop: 8 }}>Upload</div>
+                </Upload>
+            </Modal>
+        </>
+    );
+};
 
-UserInfo = connect(mapStateToProps, mapDispatchToProps)(UserInfo)
-
-export default UserInfo
+export default UserInfo;

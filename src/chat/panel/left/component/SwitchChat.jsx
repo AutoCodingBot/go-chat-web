@@ -1,126 +1,82 @@
-import React from 'react';
-import {
-    Button,
-} from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Button } from 'antd';
 import { UserOutlined, TeamOutlined } from '@ant-design/icons';
-
-import { connect } from 'react-redux'
-import { actions } from '../../../redux/module/panel'
-import * as Params from '../../../common/param/Params'
+import { useDispatch } from 'react-redux';
+import * as Params from '../../../common/param/Params';
 import { axiosGet } from '../../../util/Request';
+import { actions } from '../../../redux/module/panel';
+
+const SwitchChat = () => {
+    const dispatch = useDispatch();
+    // const userList = useSelector(state => state.userInfoReducer.user);
+    const [menuType, setMenuType] = useState(1);
+
+    useEffect(() => {
+        fetchUserList()
+    }, []); 
 
 
-class SwitchChat extends React.Component {
-    constructor(props) {
-        super(props)
-        this.state = {
-            menuType: 1,
-        }
-    }
-
-    componentDidMount() {
-        this.fetchUserList();
-    }
-
-    /**
-     * 获取好友列表
-     */
-    fetchUserList = () => {
-        this.setState({
-            menuType: 1,
-        })
-        let data = {
+    const fetchUserList = () => {
+        setMenuType(1);
+        const data = {
             uuid: localStorage.uuid
-        }
+        };
         axiosGet(Params.USER_LIST_URL, data)
             .then(response => {
-                let users = response.data
-                let data = []
-                for (var index in users) {
-                    let d = {
-                        hasUnreadMessage: false,
-                        username: users[index].username,
-                        uuid: users[index].uuid,
-                        messageType: 1,
-                        avatar: Params.HOST + "/file/" + users[index].avatar,
-                    }
-                    data.push(d)
-                }
+                const users = response.data || [];
+                const userData = users.map(user => ({
+                    hasUnreadMessage: false,
+                    username: user.username,
+                    uuid: user.uuid,
+                    messageType: 1,
+                    avatar: user.avatar ?  
+                    `${Params.HOST}/file/${user.avatar}` :
+                    `https://api.dicebear.com/9.x/pixel-art/svg?seed=${user.username}`,
+                }));
+                dispatch(actions.setUserList(userData));
+            });
+    };
 
-                this.props.setUserList(data);
-            })
-    }
-
-    /**
-     * 获取群组列表
-     */
-    fetchGroupList = () => {
-        this.setState({
-            menuType: 2,
-        })
-        let data = {
+    const fetchGroupList = () => {
+        setMenuType(2);
+        const data = {
             uuid: localStorage.uuid
-        }
+        };
         axiosGet(Params.GROUP_LIST_URL + "/" + localStorage.uuid, data)
             .then(response => {
-                let users = response.data
-                let data = []
-                for (var index in users) {
-                    let d = {
-                        username: users[index].name,
-                        uuid: users[index].uuid,
-                        messageType: 2,
-                    }
-                    data.push(d)
-                }
+                const groups = response.data || [];
+                const groupData = groups.map(group => ({
+                    username: group.name,
+                    uuid: group.uuid,
+                    messageType: 2,
+                }));
+                dispatch(actions.setUserList(groupData));
+            });
+    };
 
-                this.props.setUserList(data);
-            })
-    }
+    return (
+        <div style={{ marginTop: 25 }}>
+            <p>
+                <Button
+                    icon={<UserOutlined />}
+                    size="large"
+                    type="link"
+                    disabled={menuType === 1}
+                    onClick={fetchUserList}
+                    style={{ color: menuType === 1 ? '#1890ff' : 'gray' }}
+                />
+            </p>
+            <p onClick={fetchGroupList}>
+                <Button
+                    icon={<TeamOutlined />}
+                    size="large"
+                    type="link"
+                    disabled={menuType === 2}
+                    style={{ color: menuType === 2 ? '#1890ff' : 'gray' }}
+                />
+            </p>
+        </div>
+    );
+};
 
-    render() {
-        const { menuType } = this.state
-        return (
-            <div style={{marginTop: 25}}>
-                <p >
-                    <Button
-                        icon={<UserOutlined />}
-                        size="large"
-                        type='link'
-                        disabled={menuType === 1}
-                        onClick={this.fetchUserList}
-                        style={{color: menuType === 1 ? '#1890ff' : 'gray'}}
-                    >
-                    </Button>
-                </p>
-                <p onClick={this.fetchGroupList}>
-                    <Button
-                        icon={<TeamOutlined />}
-                        size="large"
-                        type='link'
-                        disabled={menuType === 2}
-                        style={{color: menuType === 2 ? '#1890ff' : 'gray'}}
-                    >
-                    </Button>
-                </p>
-            </div>
-        );
-    }
-}
-
-
-function mapStateToProps(state) {
-    return {
-        user: state.userInfoReducer.user,
-    }
-}
-
-function mapDispatchToProps(dispatch) {
-    return {
-        setUserList: (data) => dispatch(actions.setUserList(data)),
-    }
-}
-
-SwitchChat = connect(mapStateToProps, mapDispatchToProps)(SwitchChat)
-
-export default SwitchChat
+export default SwitchChat;

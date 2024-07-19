@@ -3,14 +3,15 @@ import qs from 'qs'
 import {
     message
 } from 'antd';
+import * as Params from '../common/param/Params'
 
 function axiosPost(url, data, options = { dealError: false }) {
     return new Promise((resolve, reject) => {
         axios.post(url, qs.stringify(data), {
             headers: {
-                // "Authorization": Params.TOKEN_PREFIX + localStorage.token,
+                "Authorization": Params.JWT_TOKEN,
                 'content-type': 'application/x-www-form-urlencoded'
-            }
+            },
         }).then(response => {
             if (response.data.code === 0) {
                 resolve(response.data);
@@ -31,7 +32,8 @@ function axiosPostBody(url, data, options = { dealError: false }) {
     return new Promise((resolve, reject) => {
         axios.post(url, data, {
             headers: {
-                // "Authorization": Params.TOKEN_PREFIX + localStorage.token,
+                "Authorization": Params.JWT_TOKEN,
+
             }
         }).then(response => {
             if (response.data.code === 0) {
@@ -53,7 +55,8 @@ function axiosPut(url, data = {}, options = { dealError: false }) {
     return new Promise((resolve, reject) => {
         axios.put(url, data, {
             headers: {
-                // "Authorization": Params.TOKEN_PREFIX + localStorage.token
+                "Authorization": Params.JWT_TOKEN,
+
             }
         }).then(response => {
             if (response.data.code === 0) {
@@ -78,7 +81,8 @@ function axiosGet(url, data = {}, options = { dealError: false }) {
                 ...data,
             },
             headers: {
-                // "Authorization": Params.TOKEN_PREFIX + localStorage.token
+                "Authorization": Params.JWT_TOKEN,
+
             }
         }).then(response => {
             if (response.data.code === 0) {

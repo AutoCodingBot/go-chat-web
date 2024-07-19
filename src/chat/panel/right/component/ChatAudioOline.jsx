@@ -139,7 +139,7 @@ class ChatAudioOline extends React.Component {
                     title="媒体面板"
                     placement="right"
                     onClose={this.mediaPanelDrawerOnClose}
-                    visible={this.state.mediaPanelDrawerVisible}
+                    open={this.state.mediaPanelDrawerVisible}
                 >
                     <Tooltip title="结束视频语音">
                         <Button

@@ -76,3 +76,9 @@ one-file分支：
 main分支：
 是将各个部分进行拆分。将Panel拆分成，左、中、右。又将右边的发送文件，图片，文件拆分成更小的组件。
 
+
+
+
+## 奇奇怪怪的问题
+ $env:NODE_OPTIONS="--openssl-legacy-provider"  
+ #这是一条完整的语句,$也要输入,解决了 error:0308010C:digital envelope routines::unsupported

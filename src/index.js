@@ -1,23 +1,18 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import Login from './chat/Login';
-import Panel from './chat/Panel';
-import { Switch, Route, BrowserRouter } from 'react-router-dom';
+import {RouterProvider } from 'react-router-dom';
 import reportWebVitals from './reportWebVitals';
 import { Provider } from 'react-redux';
 import store from './chat/redux/module/index'
+import router from './router';
 
 ReactDOM.render(
-  <Provider store={store}>
-    <BrowserRouter>
-      <Switch>
-        <Route path="/login" component={Login} />
-        <Route path="/panel/:user" component={Panel} />
-        <Route path="/" component={Login} />
-      </Switch>
-    </BrowserRouter>
-  </Provider>,
+  <React.StrictMode>
+    <Provider store={store}>
+      <RouterProvider router={router} />
+    </Provider>
+  </React.StrictMode>,
   document.getElementById('root')
 );
 

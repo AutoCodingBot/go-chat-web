@@ -1,21 +1,17 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import {
     Avatar,
     Drawer,
     List,
     Badge,
     Card,
-    Comment
+    Comment,
 } from 'antd';
-
-import {
-    MoreOutlined,
-} from '@ant-design/icons';
-
 import InfiniteScroll from 'react-infinite-scroll-component';
-import { connect } from 'react-redux'
-import { actions } from '../../../redux/module/panel'
-import * as Params from '../../../common/param/Params'
+import { MoreOutlined } from '@ant-design/icons';
+import { actions } from '../../../redux/module/panel';
+import * as Params from '../../../common/param/Params';
 import { axiosGet } from '../../../util/Request';
 
 const CommentList = ({ comments }) => (
@@ -31,126 +27,80 @@ const CommentList = ({ comments }) => (
     </InfiniteScroll>
 );
 
-class ChatDetails extends React.Component {
-    constructor(props) {
-        super(props)
-        this.state = {
-            groupUsers: [],
-            drawerVisible: false,
-            messageList: []
+const ChatDetails = () => {
+    const dispatch = useDispatch();
+    const chooseUser = useSelector(state => state.panelReducer.chooseUser);
+    const messageList = useSelector(state => state.panelReducer.messageList);
+    const [drawerVisible, setDrawerVisible] = useState(false);
+    const [groupUsers, setGroupUsers] = useState([]);
+
+    useEffect(() => {
+        if (messageList.length > 0) {
+            scrollToBottom();
         }
-    }
+    }, [messageList]);
 
-    static getDerivedStateFromProps(nextProps, preState) {
-        if (nextProps.messageList !== preState.messageList) {
-            return {
-                ...preState,
-                messageList: nextProps.messageList,
-            }
+    //下拉到底
+    const scrollToBottom = useCallback(() => {
+        const div = document.getElementById("scrollableDiv");
+        if (div) {
+            div.scrollTop = div.scrollHeight;
         }
-        return null;
-    }
+    }, []);
 
-    componentDidUpdate(prevProps) {
-        if (prevProps.messageList !== this.state.messageList) {
-            this.scrollToBottom();
-        }
-    }
-
-    componentDidMount() {
-
-    }
-
-    /**
-     * 发送消息或者接受消息后，滚动到最后
-     */
-    scrollToBottom = () => {
-        let div = document.getElementById("scrollableDiv")
-        div.scrollTop = div.scrollHeight
-    }
-
-    /**
-     * 获取群聊信息，群成员列表
-     */
-    chatDetails = () => {
-        axiosGet(Params.GROUP_USER_URL + this.props.chooseUser.toUser)
+    const chatDetails = useCallback(() => {
+        axiosGet(`${Params.GROUP_USER_URL}${chooseUser.toUser}`)
             .then(response => {
-                if (null == response.data) {
-                    return;
+                if (response.data) {
+                    setGroupUsers(response.data);
+                    setDrawerVisible(true);
                 }
-                this.setState({
-                    drawerVisible: true,
-                    groupUsers: response.data
-                })
             });
+    }, [chooseUser.toUser]);
 
-    }
-
-    drawerOnClose = () => {
-        this.setState({
-            drawerVisible: false,
-        })
-    }
+    const drawerOnClose = () => {
+        setDrawerVisible(false);
+    };
 
 
-    render() {
+    return (
+        <>
+            <Badge.Ribbon text={<MoreOutlined onClick={chatDetails} />}>
 
-        return (
-            <>
+                <Card title={chooseUser.toUsername} size="large">
+                    <div
+                        id="scrollableDiv"
+                        style={{
+                            height: `calc(${document.body.scrollHeight}px / 3 * 1.4)`,
+                            overflow: 'auto',
+                            padding: '0 16px',
+                            border: '0px solid rgba(140, 140, 140, 0.35)',
+                        }}
+                    >
+                        {messageList.length > 0 && <CommentList comments={messageList} />}
+                    </div>
+                </Card>
 
-                <Badge.Ribbon text={<MoreOutlined onClick={this.chatDetails} />}>
+            </Badge.Ribbon>
 
-                    <Card title={this.props.chooseUser.toUsername} size="larg">
-                        <div
-                            id="scrollableDiv"
-                            style={{
-                                height: document.body.scrollHeight / 3 * 1.4,
-                                overflow: 'auto',
-                                padding: '0 16px',
-                                border: '0px solid rgba(140, 140, 140, 0.35)',
-                            }}
-                        >
-                            {this.props.messageList.length > 0 && <CommentList comments={this.props.messageList} />}
+            <Drawer title="成员列表" placement="right" onClose={drawerOnClose} open={drawerVisible}>
+                <List
+                    itemLayout="horizontal"
+                    dataSource={groupUsers}
+                    renderItem={item => (
+                        <List.Item>
+                            <List.Item.Meta
+                                style={{ paddingLeft: 30 }}
+                                avatar={<Avatar src={`${Params.HOST}/file/${item.avatar}`} />}
+                                title={item.username}
+                                description=""
+                            />
+                        </List.Item>
+                    )}
+                />
+            </Drawer>
+        </>
+    );
+};
 
-                        </div>
-                    </Card>
-
-                </Badge.Ribbon>
-                <Drawer title="成员列表" placement="right" onClose={this.drawerOnClose} visible={this.state.drawerVisible}>
-                    <List
-                        itemLayout="horizontal"
-                        dataSource={this.state.groupUsers}
-                        renderItem={item => (
-                            <List.Item>
-                                <List.Item.Meta
-                                    style={{ paddingLeft: 30 }}
-                                    avatar={<Avatar src={Params.HOST + "/file/" + item.avatar} />}
-                                    title={item.username}
-                                    description=""
-                                />
-                            </List.Item>
-                        )}
-                    />
-                </Drawer>
-            </>
-        );
-    }
-}
-
-
-function mapStateToProps(state) {
-    return {
-        chooseUser: state.panelReducer.chooseUser,
-        messageList: state.panelReducer.messageList,
-    }
-}
-
-function mapDispatchToProps(dispatch) {
-    return {
-        setUser: (data) => dispatch(actions.setUser(data)),
-    }
-}
-
-ChatDetails = connect(mapStateToProps, mapDispatchToProps)(ChatDetails)
-
-export default ChatDetails
+export default ChatDetails;

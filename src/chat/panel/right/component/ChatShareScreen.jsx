@@ -126,7 +126,7 @@ class ChatShareScreen extends React.Component {
                     />
                 </Tooltip>
 
-                <Drawer width='820px' forceRender={true} title="媒体面板" placement="right" onClose={this.mediaPanelDrawerOnClose} visible={this.state.mediaPanelDrawerVisible}>
+                <Drawer width='820px' forceRender={true} title="媒体面板" placement="right" onClose={this.mediaPanelDrawerOnClose} open={this.state.mediaPanelDrawerVisible}>
                     <Tooltip title="结束分享">
                         <Button
                             shape="circle"
