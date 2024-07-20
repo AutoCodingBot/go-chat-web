@@ -3,13 +3,13 @@ import qs from 'qs'
 import {
     message
 } from 'antd';
-import * as Params from '../common/param/Params'
+// import * as Params from '../common/param/Params'
 
 function axiosPost(url, data, options = { dealError: false }) {
     return new Promise((resolve, reject) => {
         axios.post(url, qs.stringify(data), {
             headers: {
-                "Authorization": Params.JWT_TOKEN,
+                "Authorization":  "Bearer "+localStorage.getItem("ACCESS_TOKEN"),
                 'content-type': 'application/x-www-form-urlencoded'
             },
         }).then(response => {
@@ -32,7 +32,7 @@ function axiosPostBody(url, data, options = { dealError: false }) {
     return new Promise((resolve, reject) => {
         axios.post(url, data, {
             headers: {
-                "Authorization": Params.JWT_TOKEN,
+                "Authorization": "Bearer "+localStorage.getItem("ACCESS_TOKEN"),
 
             }
         }).then(response => {
@@ -55,7 +55,7 @@ function axiosPut(url, data = {}, options = { dealError: false }) {
     return new Promise((resolve, reject) => {
         axios.put(url, data, {
             headers: {
-                "Authorization": Params.JWT_TOKEN,
+                "Authorization": "Bearer "+localStorage.getItem("ACCESS_TOKEN"),
 
             }
         }).then(response => {
@@ -81,7 +81,7 @@ function axiosGet(url, data = {}, options = { dealError: false }) {
                 ...data,
             },
             headers: {
-                "Authorization": Params.JWT_TOKEN,
+                "Authorization": "Bearer "+localStorage.getItem("ACCESS_TOKEN"),
 
             }
         }).then(response => {

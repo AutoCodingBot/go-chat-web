@@ -8,7 +8,7 @@ import {
 } from 'antd';
 import { axiosPostBody } from './util/Request';
 import * as Params from './common/param/Params';
-import { useNavigate } from 'react-router-dom';
+import { redirect ,useNavigate } from 'react-router-dom';
 
 const Login = () => {
     const [registerDrawerVisible, setRegisterDrawerVisible] = useState(false);
@@ -28,12 +28,11 @@ const Login = () => {
         };
         axiosPostBody(Params.LOGIN_URL, data)
             .then(response => {
-                message.success("登录成功！");
+                message.success("登录成功!");
                 localStorage.setItem('username', response.data.username);
                 localStorage.setItem('uuid', response.data.uuid);
                 //jwt
-                sessionStorage.setItem("ACCESS_TOKEN",response.data.jwt)
-                localStorage.setItem('uuid', response.data.uuid);
+                localStorage.setItem("ACCESS_TOKEN",response.data.jwt)
                 navigate(`/panel/${response.data.uuid}`);
                 //原先的:
                 // this.props.history.push("panel/" + response.data.uuid)

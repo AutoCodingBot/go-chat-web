@@ -165,7 +165,7 @@ class UserSearch extends React.Component {
                         </Input.Group>
                     </Col>
                     <Col>
-                        <Dropdown menu={menu} placement="bottom" arrow>
+                        <Dropdown overlay={menu} placement="bottom" arrow>
                             <PlusCircleOutlined style={{ fontSize: 22, color: 'gray', marginLeft: 3, marginTop: 5 }} />
                         </Dropdown>
                     </Col>

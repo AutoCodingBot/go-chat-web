@@ -7,23 +7,6 @@ import { axiosGet } from '../../../util/Request';
 import { actions } from '../../../redux/module/userInfo';
 import { useNavigate } from "react-router-dom";
 
-function getBase64(img, callback) {
-    const reader = new FileReader();
-    reader.addEventListener('load', () => callback(reader.result));
-    reader.readAsDataURL(img);
-}
-
-function beforeUpload(file) {
-    const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
-    if (!isJpgOrPng) {
-        message.error('You can only upload JPG/PNG file!');
-    }
-    const isLt2M = file.size / 1024 / 1024 < 2;
-    if (!isLt2M) {
-        message.error('Image must smaller than 2MB!');
-    }
-    return isJpgOrPng && isLt2M;
-}
 
 const UserInfo = () => {
     const navigate = useNavigate();
@@ -32,10 +15,27 @@ const UserInfo = () => {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [loading, setLoading] = useState(false);
     const [imageUrl, setImageUrl] = useState('');
-
     useEffect(() => {
         fetchUserDetails();
     }, []);
+
+    const getBase64=(img, callback) =>{
+        const reader = new FileReader();
+        reader.addEventListener('load', () => callback(reader.result));
+        reader.readAsDataURL(img);
+    }
+    
+    const beforeUpload = (file) =>{
+        const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
+        if (!isJpgOrPng) {
+            message.error('JPG/PNG only!');
+        }
+        const isLt2M = file.size / 1024 / 1024 < 2;
+        if (!isLt2M) {
+            message.error('Image must smaller than 2MB!');
+        }
+        return isJpgOrPng && isLt2M;
+    }
 
     const fetchUserDetails = async () => {
         try {
@@ -50,15 +50,12 @@ const UserInfo = () => {
         }
     };
 
-    const modifyAvatar = () => {
-        setIsModalVisible(true);
-    };
 
-    const handleCancel = () => {
-        setIsModalVisible(false);
-    };
 
     const loginout = () => {
+        localStorage.removeItem('uuid');
+        localStorage.removeItem('username');
+        localStorage.removeItem('ACCESS_TOKEN');
         navigate("/login");
     };
 
@@ -76,7 +73,6 @@ const UserInfo = () => {
                     ...user,
                     avatar: `${Params.HOST}/file/${response.data}`
                 };
-                console.log('hit me',response.data)
                 dispatch(actions.setUser(newUser));
                 getBase64(info.file.originFileObj, (imageUrl) => {
                     setImageUrl(imageUrl);
@@ -92,7 +88,7 @@ const UserInfo = () => {
                 <Button type='link'>{user.username}</Button>
             </Menu.Item>
             <Menu.Item key="2">
-                <Button type='link' onClick={modifyAvatar}>更新头像</Button>
+                <Button type='link' onClick={()=>setIsModalVisible(true)}>更新头像</Button>
             </Menu.Item>
             <Menu.Item key="3">
                 <Button type='link' onClick={loginout}>退出</Button>
@@ -102,11 +98,11 @@ const UserInfo = () => {
 
     return (
         <>
-            <Dropdown menu={menu} placement="bottom" arrow>
+            <Dropdown overlay={menu} placement="bottom" arrow>
                 <Avatar src={user.avatar} alt={user.username} />
             </Dropdown>
 
-            <Modal title="更新头像" open={isModalVisible} onCancel={handleCancel} footer={null}>
+            <Modal title="更新头像" open={isModalVisible} onCancel={()=>setIsModalVisible(false)} footer={null}>
                 <Upload
                     name="file"
                     listType="picture-card"

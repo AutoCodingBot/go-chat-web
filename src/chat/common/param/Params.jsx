@@ -26,5 +26,5 @@ export const FILE_URL = HOST + '/file'
 
 export const FINANCIAL_PARAM_URL = HOST + API_VERSION + 'financial-param/';
 export const AUTH_HEADER_KEY = "Authorization";
-export const JWT_TOKEN = sessionStorage.getItem("ACCESS_TOKEN") ? "Bearer "+sessionStorage.getItem("ACCESS_TOKEN") : "";
+// export const JWT_TOKEN = localStorage.getItem("ACCESS_TOKEN") ? "Bearer "+localStorage.getItem("ACCESS_TOKEN") : "";
 

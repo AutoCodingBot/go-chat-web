@@ -1,13 +1,8 @@
-import React from 'react';
-import {
-    Form,
-    Input,
-    Button,
-    Comment
-} from 'antd';
+import React, { useEffect, useState } from 'react';
+import { connect, useDispatch, useSelector } from 'react-redux';
+import { Form, Input, Button, Comment } from 'antd';
 
-import { connect } from 'react-redux'
-import { actions } from '../../../redux/module/panel'
+import { actions } from '../../../redux/module/panel';
 
 const { TextArea } = Input;
 
@@ -24,130 +19,87 @@ const Editor = ({ onChange, onSubmit, submitting, value, toUser }) => (
     </>
 );
 
-
-class ChatEdit extends React.Component {
-    constructor(props) {
-        super(props)
-        this.state = {
-            submitting: false,
-            value: '',
-        }
-    }
-
-    componentDidMount() {
-        this.bindParse();
-    }
-
-    /**
-     * 解析剪切板的文件
-     */
-    bindParse = () => {
-        document.getElementById("messageArea").addEventListener("paste", (e) => {
-            var data = e.clipboardData
-            if (!data.items) {
-                return;
+const ChatEdit = (props) => {
+    const dispatch = useDispatch();
+    const { chooseUser } = useSelector(state => state.panelReducer);
+    const [submitting, setSubmitting] = useState(false);
+    const [value, setValue] = useState('');
+    useEffect(() => {
+        const bindParse = () => {
+            const messageArea = document.getElementById("messageArea");
+            if (messageArea) {
+                messageArea.addEventListener("paste", handlePaste, false);
             }
-            var items = data.items
-
-            if (null == items || items.length <= 0) {
-                return;
-            }
-
-            let item = items[0]
-            if (item.kind !== 'file') {
-                return;
-            }
-            let blob = item.getAsFile()
-
-            let reader = new FileReader()
-            reader.readAsArrayBuffer(blob)
-
-            reader.onload = ((e) => {
-                let imgData = e.target.result
-
-                // 上传文件必须将ArrayBuffer转换为Uint8Array
-                let data = {
-                    content: this.state.value,
-                    contentType: 3,
-                    file: new Uint8Array(imgData)
+            return () => {
+                if (messageArea) {
+                    messageArea.removeEventListener("paste", handlePaste, false);
                 }
-                this.props.sendMessage(data)
+            };
+        };
 
-                this.props.appendImgToPanel(imgData)
-            })
+        bindParse();
+    }, []);
 
-        }, false)
-    }
-    /**
-     * 每次输入框输入后，将值存放在state中
-     * @param {事件} e 
-     */
-    handleChange = e => {
-        this.setState({
-            value: e.target.value,
-        });
+    const handlePaste = (e) => {
+        const data = e.clipboardData;
+        if (!data.items) return;
+        const items = data.items;
+
+        if (items.length <= 0) return;
+
+        const item = items[0];
+        if (item.kind !== 'file') return;
+        const blob = item.getAsFile();
+
+        const reader = new FileReader();
+        reader.readAsArrayBuffer(blob);
+
+        reader.onload = (e) => {
+            const imgData = e.target.result;
+            const fileData = {
+                content: value,
+                contentType: 3,
+                file: new Uint8Array(imgData),
+            };
+            dispatch(actions.sendMessage(fileData));
+            dispatch(actions.appendImgToPanel(imgData));
+        };
     };
 
-    /**
-     * 发送消息
-     * @returns 
-     */
-    handleSubmit = () => {
-        if (!this.state.value) {
-            return;
-        }
-        
-        let message = {
-            content: this.state.value,
+
+    const handleSubmit = () => {
+        if (!value || submitting) return;
+        const message = {
+            content: value,
             contentType: 1,
-        }
+        };
 
-        this.props.sendMessage(message)
+        props.sendMessage(message)
 
-        this.props.appendMessage(this.state.value);
-        this.setState({
-            submitting: false,
-            value: '',
-        });
+        props.appendMessage(value);
 
+        setSubmitting(false);
+        setValue('');
     };
 
-    render() {
-        const { submitting, value } = this.state;
-        const { toUser } = this.props.chooseUser;
-        return (
-            <>
+    return (
+        <>
+            <Comment
+                content={
+                    <Editor
+                        onChange={(e)=>setValue(e.target.value)}
+                        onSubmit={handleSubmit}
+                        submitting={submitting}
+                        value={value}
+                        toUser={chooseUser.toUser}
+                    />
+                }
+            />
+        </>
+    );
+};
 
-                <Comment
-                    content={
-                        <Editor
-                            onChange={this.handleChange}
-                            onSubmit={this.handleSubmit}
-                            submitting={submitting}
-                            value={value}
-                            toUser={toUser}
-                        />
-                    }
-                />
-            </>
-        );
-    }
-}
-
-
-function mapStateToProps(state) {
-    return {
-        chooseUser: state.panelReducer.chooseUser,
-        messageList: state.panelReducer.messageList,
-    }
-}
-
-function mapDispatchToProps(dispatch) {
-    return {
-        setUser: (data) => dispatch(actions.setUser(data)),
-    }
-}
-
-ChatEdit = connect(mapStateToProps, mapDispatchToProps)(ChatEdit)
-
-export default ChatEdit
+export default connect(state => ({
+    chooseUser: state.panelReducer.chooseUser,
+    messageList: state.panelReducer.messageList,
+}))(ChatEdit);

@@ -4,6 +4,7 @@ import { createBrowserRouter} from 'react-router-dom'
 import Login from './chat/Login'
 import Panel from './chat/Panel'
 import NotFound from './chat/NotFound'
+import Test from './Test'
 
 
 const router = createBrowserRouter([
@@ -29,9 +30,9 @@ const router = createBrowserRouter([
         element:<NotFound/>
     },
     //测试
-    // {
-    //     path:'test',
-    //     element:<Test/>
-    // }
+    {
+        path:'test',
+        element:<Test/>
+    }
 ])
 export default router
