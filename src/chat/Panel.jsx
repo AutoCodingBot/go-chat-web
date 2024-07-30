@@ -22,6 +22,7 @@ import Right from './panel/right/index'
 import protobuf from './proto/proto'
 import { connect } from 'react-redux'
 import { actions } from './redux/module/panel'
+import { useNavigate } from 'react-router-dom';
 
 var socket = null;
 var peer = null;
@@ -89,6 +90,7 @@ class Panel extends React.Component {
     componentDidMount() {
         this.connection()
     }
+
 
     /**
      * websocket连接

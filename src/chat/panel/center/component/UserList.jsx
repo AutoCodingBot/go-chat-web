@@ -12,33 +12,6 @@ const UserList = () => {
     const [chooseUser, setChooseUserState] = useState({});//当前用户card
     const dispatch = useDispatch();
     const userList = useSelector(state => state.panelReducer.userList);
-    // console.log('当前所在组的用户信息',userList)
-    // "data": [
-    //     {
-    //         "id": 0,
-    //         "uuid": "28353ed6-5966-4804-9c52-9b00abd4401e",
-    //         "username": "eric",
-    //         "password": "",
-    //         "nickname": "",
-    //         "avatar": "5f9f6ad8-bd9a-4a8d-a9a6-b5ae0e8c0949.jpg",
-    //         "email": "",
-    //         "createAt": "0001-01-01T00:00:00Z",
-    //         "updateAt": null,
-    //         "deleteAt": 0
-    //     },
-    //     {
-    //         "id": 0,
-    //         "uuid": "c0fd020f-fa4d-4379-8f8b-f84a07fadd6a",
-    //         "username": "sam",
-    //         "password": "",
-    //         "nickname": "",
-    //         "avatar": "",
-    //         "email": "",
-    //         "createAt": "0001-01-01T00:00:00Z",
-    //         "updateAt": null,
-    //         "deleteAt": 0
-    //     }
-    // ]
 
     const chooseUserHandler = (value) => {
         //value是在Switch中渲染并提交给redux管理的数据
@@ -130,7 +103,7 @@ const UserList = () => {
                             <List.Item.Meta
                                 style={{ paddingLeft: 30 ,backgroundColor: chooseUser === item.username ? '#87CEFA' : 'transparent'}}
                                 onClick={() => chooseUserHandler(item)}
-                                avatar={<Badge dot={item.hasUnreadMessage}><Avatar src={item.avatar} /></Badge>}
+                                avatar= {<Badge dot={item.hasUnreadMessage}><Avatar src={item.avatar || `https://api.dicebear.com/9.x/pixel-art/svg?seed=${item.username}`} /></Badge>}
                                 title={item.username}
                                 description=""
                                 // description 用来加载最后一条消息

@@ -1,42 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Avatar, Button, Dropdown, Menu, Modal, Upload, message } from 'antd';
-import { LoadingOutlined, PlusOutlined } from '@ant-design/icons';
+import { Avatar, Button, Dropdown, Menu, Modal, Switch ,Form,Input,message} from 'antd';
+import { axiosPut } from '../../../util/Request';
 import { useDispatch, useSelector } from 'react-redux';
 import * as Params from '../../../common/param/Params';
 import { axiosGet } from '../../../util/Request';
 import { actions } from '../../../redux/module/userInfo';
 import { useNavigate } from "react-router-dom";
-
-
+import UploadAvatar from "../../../common/components/UploadAvatar"
 const UserInfo = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const user = useSelector(state => state.userInfoReducer.user);
     const [isModalVisible, setIsModalVisible] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [imageUrl, setImageUrl] = useState('');
+    const [switchStatus,setSwtitchStatus] = useState(false)
     useEffect(() => {
         fetchUserDetails();
     }, []);
 
-    const getBase64=(img, callback) =>{
-        const reader = new FileReader();
-        reader.addEventListener('load', () => callback(reader.result));
-        reader.readAsDataURL(img);
-    }
-    
-    const beforeUpload = (file) =>{
-        const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
-        if (!isJpgOrPng) {
-            message.error('JPG/PNG only!');
-        }
-        const isLt2M = file.size / 1024 / 1024 < 2;
-        if (!isLt2M) {
-            message.error('Image must smaller than 2MB!');
-        }
-        return isJpgOrPng && isLt2M;
-    }
-
+    //加载用户信息
     const fetchUserDetails = async () => {
         try {
             const response = await axiosGet(`${Params.USER_URL}${localStorage.uuid}`);
@@ -59,36 +40,36 @@ const UserInfo = () => {
         navigate("/login");
     };
 
-    const handleChange = (info) => {
-        if (info.file.status === 'uploading') {
-            setLoading(true);
-            return;
-        }
-        if (info.file.status === 'done') {
-            const response = info.file.response;
-            if (response.code !== 0) {
-                message.error(response.msg);
-            } else {
-                const newUser = {
-                    ...user,
-                    avatar: `${Params.HOST}/file/${response.data}`
-                };
-                dispatch(actions.setUser(newUser));
-                getBase64(info.file.originFileObj, (imageUrl) => {
-                    setImageUrl(imageUrl);
-                    setLoading(false);
-                });
-            }
-        }
-    };
+    //更新用户头像
+    const handleImgChange = (imgUrl)=>{
+        // console.log(imgUrl)
+        const newUser = {
+            ...user,
+            avatar: `${Params.HOST}/file/${imgUrl}`
+        };
+        dispatch(actions.setUser(newUser));
+    }
 
+    //提交表单
+    const submitProfile = (data)=>{
+        const avatarUrlArr = user.avatar.split("/");
+        data.avatar = avatarUrlArr[avatarUrlArr.length -1 ]
+
+        axiosPut(`${Params.HOST}/user`, data)
+        .then(response => {
+            console.log(response)
+            setIsModalVisible(false);
+            message.success("Profile updated!");
+        });
+
+    }
     const menu = (
         <Menu>
             <Menu.Item key="1">
                 <Button type='link'>{user.username}</Button>
             </Menu.Item>
             <Menu.Item key="2">
-                <Button type='link' onClick={()=>setIsModalVisible(true)}>更新头像</Button>
+                <Button type='link' onClick={()=>setIsModalVisible(true)}>Profile</Button>
             </Menu.Item>
             <Menu.Item key="3">
                 <Button type='link' onClick={loginout}>退出</Button>
@@ -102,20 +83,98 @@ const UserInfo = () => {
                 <Avatar src={user.avatar} alt={user.username} />
             </Dropdown>
 
-            <Modal title="更新头像" open={isModalVisible} onCancel={()=>setIsModalVisible(false)} footer={null}>
-                <Upload
-                    name="file"
-                    listType="picture-card"
-                    className="avatar-uploader"
-                    showUploadList={false}
-                    action={Params.FILE_URL}
-                    beforeUpload={beforeUpload}
-                    onChange={handleChange}
-                    data={{ uuid: user.uuid }}
+            <Modal title="Edit Profile" open={isModalVisible} onCancel={()=>setIsModalVisible(false)} footer={null}>
+                <Form
+                    name="basic"
+
+                        labelCol={{
+                        span: 8,
+                        }}
+
+                        wrapperCol={{
+                        span: 16,
+                        }}
+
+                        style={{
+                        maxWidth: 600,
+                        }}
+
+                        initialValues={{
+                        remember: true,
+                        }}
+
+                    onFinish={submitProfile}
+                    // onFinishFailed={onFinishFailed}
+                    autoComplete="off"
                 >
-                    {imageUrl ? <img src={imageUrl} alt="avatar" style={{ width: '100%' }} /> : loading ? <LoadingOutlined /> : <PlusOutlined />}
-                    <div style={{ marginTop: 8 }}>Upload</div>
-                </Upload>
+                    <Form.Item
+                    label="头像"
+                    name="avatar"
+                    >
+                        {/* <Input  /> */}
+                        <UploadAvatar objectType="user" handleImgChange={handleImgChange} />
+                    </Form.Item>
+
+                    <Form.Item
+                    wrapperCol={{
+                        offset: 8,
+                        span: 16,
+                    }}
+                    >
+                        <div>修改密码</div>
+                        <Switch defaultChecked onChange={()=>setSwtitchStatus(!switchStatus)} checked={switchStatus} />
+                    </Form.Item>
+
+
+                    {switchStatus &&(
+                        <div>
+                            <Form.Item
+                                label="当前密码"
+                                name="currentPassword"
+                                rules={[
+                                    {
+                                    required: true,
+                                    message: 'Password required!',
+                                    },
+                                ]}
+                                >
+                                <Input />
+                            </Form.Item>
+
+
+                            <Form.Item
+                                label="新密码"
+                                name="newPassword"
+                                rules={[
+                                    {
+                                    required: true,
+                                    message: 'New Password required!',
+                                    },
+                                    {
+                                        pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*[\d])(?=.*[@#$+-])[A-Za-z\d@#$+-]{6,}$/,
+                                        message: "长度>=6,大小写字母,数字,特殊符号(@,#,$,+,-)",
+                                    },
+                                ]}
+                                >
+                                <Input />
+                            </Form.Item>
+                        </div>
+                    )}
+
+
+                    <Form.Item
+                    wrapperCol={{
+                        offset: 8,
+                        span: 16,
+                    }}
+                    >
+                    <Button type="primary" htmlType="submit">
+                        Submit
+                    </Button>
+
+                    </Form.Item>
+                </Form>
+    {/* <UploadAvatar objectType="user" handleImgChange={handleImgChange} /> */}
             </Modal>
         </>
     );

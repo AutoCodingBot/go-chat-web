@@ -1,227 +1,203 @@
-import React from 'react';
-import {
-    Row,
-    Button,
-    Col,
-    Menu,
-    Modal,
-    Dropdown,
-    Input,
-    Form,
-    message
-} from 'antd';
+import React, { useState, useRef, useEffect } from 'react';
+import { Row, Button, Col, Menu, Dropdown, Input, Form, Modal, message ,Upload} from 'antd';
 import { PlusCircleOutlined } from '@ant-design/icons';
+// import { LoadingOutlined, PlusOutlined } from '@ant-design/icons';
 
-import { connect } from 'react-redux'
-import { actions } from '../../../redux/module/panel'
-import * as Params from '../../../common/param/Params'
+import UploadAvatar from "../../../common/components/UploadAvatar"
+
+import { useDispatch, useSelector } from 'react-redux';
+import { actions } from '../../../redux/module/panel';
+import * as Params from '../../../common/param/Params';
 import { axiosGet, axiosPostBody } from '../../../util/Request';
 
+const UserSearch = () => {
+    const dispatch = useDispatch();
+    const user = useSelector(state => state.userInfoReducer.user);
 
-class UserSearch extends React.Component {
-    groupForm = React.createRef();
-    constructor(props) {
-        super(props)
-        this.state = {
-            showCreateGroup: false,
-            hasUser: false,
-            queryUser: {
-                username: '',
-                nickname: '',
-            },
-        }
-    }
+    const [showCreateGroup, setShowCreateGroup] = useState(false);
+    const [hasUser, setHasUser] = useState(false); //检索用户,群的modal
+    const [queryUser, setQueryUser] = useState({ username: '', nickname: '' });
+    const [imageAddr,setImageAddr] = useState('');
+    const groupFormRef = useRef(null);
+    const userList = useSelector(state => state.panelReducer.userList);
 
-    componentDidMount() {
+    // useEffect(() => {
+    //     // componentDidMount logic can be placed here if needed.
+    // }, []);
 
-    }
-
-    /**
-     * 搜索用户
-     * @param {*} value 
-     * @param {*} _event 
-     * @returns 
-     */
-    searchUser = (value, _event) => {
-        if (null === value || "" === value) {
-            return
+    const searchUser = (value, _event) => {
+        if (!value.trim()) {
+            return;
         }
 
-        let data = {
+        const searchData = {
             name: value
-        }
-        axiosGet(Params.USER_NAME_URL, data)
+        };
+        axiosGet(Params.USER_NAME_URL, searchData)
             .then(response => {
-                let data = response.data
-                if (data.user.username === "" && data.group.name === "") {
-                    message.error("未查找到群或者用户")
-                    return
+                const userData = response.data;
+                if (!userData.user.username && !userData.group.name) {
+                    message.error('未查找到群或者用户');
+                    return;
                 }
-                let queryUser = {
-                    username: data.user.username,
-                    nickname: data.user.nickname,
-
-                    groupUuid: data.group.uuid,
-                    groupName: data.group.name,
-                }
-                this.setState({
-                    hasUser: true,
-                    queryUser: queryUser
-                });
+                const foundUser = {
+                    username: userData.user.username,
+                    nickname: userData.user.nickname,
+                    groupUuid: userData.group.uuid,
+                    groupName: userData.group.name,
+                };
+                setHasUser(true); //因为可以直接在搜索框检索,因此需要额外声明开启modal
+                setQueryUser(foundUser);
             });
-    }
-
-    showModal = () => {
-        this.setState({
-            hasUser: true
-        });
     };
 
-    addUser = () => {
-        let data = {
+    // const showModal = () => setHasUser(true);
+
+    const addUser = () => {
+        const addUserData = {
             uuid: localStorage.uuid,
-            friendUsername: this.state.queryUser.username
-        }
-        axiosPostBody(Params.USER_FRIEND_URL, data)
+            friendUsername: queryUser.username
+        };
+        axiosPostBody(Params.USER_FRIEND_URL, addUserData)
             .then(_response => {
-                message.success("添加成功")
-                // this.fetchUserList()
-                this.setState({
-                    hasUser: false
-                });
+                message.success('添加用户成功');
+                setHasUser(false);
+                //更新用户信息
+                const updatedUserList = [...userList,{hasUnreadMessage:false,messageType:1,uuid:_response.data.uuid,username:_response.data.username}]
+                dispatch(actions.setUserList(updatedUserList));
             });
     };
 
-    joinGroup = () => {
-        // /group/join/:userUid/:groupUuid
-        axiosPostBody(Params.GROUP_JOIN_URL + localStorage.uuid + "/" + this.state.queryUser.groupUuid)
+    const joinGroup = () => {
+        axiosPostBody(`${Params.GROUP_JOIN_URL}${localStorage.uuid}/${queryUser.groupUuid}`)
             .then(_response => {
-                message.success("添加成功")
-                // this.fetchUserList()
-                this.setState({
-                    hasUser: false
-                });
+                message.success('加入群组成功');
+                setHasUser(false);
             });
-    }
-
-    handleCancel = () => {
-        this.setState({
-            hasUser: false
-        });
     };
 
-    showCreateGroup = () => {
-        this.setState({
-            showCreateGroup: true
-        });
-    }
 
-    handleCancelGroup = () => {
-        this.setState({
-            showCreateGroup: false
-        });
-    }
 
-    /**
-     * 创建群
-     */
-    createGroup = () => {
-        console.log(this.groupForm.current.getFieldValue())
-        let values = this.groupForm.current.getFieldValue();
-        let data = {
-            name: values.groupName
-        }
+    const createGroup = () => {
+        const groupFormData = groupFormRef.current.getFieldsValue();
+        const createGroupData = {
+            name: groupFormData.groupName,
+            groupDescribe:groupFormData.groupDescribe,
+            avatar :imageAddr
+        };
+        console.log(createGroupData)
+        return
 
-        axiosPostBody(Params.GROUP_LIST_URL + "/" + localStorage.uuid, data)
+        axiosPostBody(`${Params.GROUP_LIST_URL}/${localStorage.uuid}`, createGroupData)
             .then(_response => {
-                message.success("添加成功")
-                this.setState({
-                    showCreateGroup: false
-                });
+                message.success('创建群组成功');
+                setShowCreateGroup(false);
             });
+    };
+    const handleImgChange = (imgAddr)=>{
+        setImageAddr(imgAddr)
+        console.log(imgAddr)
     }
+    const menu = (
+        <Menu>
+            <Menu.Item key="1">
+                <Button type='link' onClick={()=>setHasUser(true)}>添加用户</Button>
+            </Menu.Item>
+            {/* The second MenuItem for adding a group directly was misleading and not provided in the original class component logic. It's commented out but can be added with proper functionality if required. */}
+            {/* <Menu.Item key="2">Add Group Logic Here</Menu.Item> */}
+            <Menu.Item key="3">
+                <Button type='link' onClick={()=>setShowCreateGroup(true)}>创建群</Button>
+            </Menu.Item>
+        </Menu>
+    );
 
-    render() {
-        const menu = (
-            <Menu>
-                <Menu.Item key={1}>
-                    <Button type='link' onClick={this.showModal}>添加用户</Button>
-                </Menu.Item>
-                <Menu.Item key={2}>
-                    <Button type='link' onClick={this.showModal}>添加群</Button>
-                </Menu.Item>
-                <Menu.Item key={3}>
-                    <Button type='link' onClick={this.showCreateGroup}>创建群</Button>
-                </Menu.Item>
-            </Menu>
-        );
-
-        return (
-            <>
-                <Row>
-                    <Col span={20} >
-                        <Input.Group compact>
-                            <Input.Search allowClear style={{ width: '100%' }} onSearch={this.searchUser} />
-                        </Input.Group>
-                    </Col>
-                    <Col>
-                        <Dropdown overlay={menu} placement="bottom" arrow>
-                            <PlusCircleOutlined style={{ fontSize: 22, color: 'gray', marginLeft: 3, marginTop: 5 }} />
-                        </Dropdown>
-                    </Col>
-                </Row>
-
-
-                <Modal title="用户信息" open={this.state.hasUser} onCancel={this.handleCancel} okText="添加用户" footer={null}>
+    return (
+        <>
+            <Row>
+                <Col span={20}>
                     <Input.Group compact>
-                        <Input.Search allowClear style={{ width: '100%' }} onSearch={this.searchUser} />
+                        <Input.Search
+                            allowClear
+                            style={{ width: '100%' }}
+                            onSearch={searchUser}
+                        />
+                    </Input.Group>
+                </Col>
+                <Col>
+                    <Dropdown overlay={menu} placement="bottom" arrow>
+                        <PlusCircleOutlined
+                            style={{ fontSize: 22, color: 'gray', marginLeft: 3, marginTop: 5 }}
+                        />
+                    </Dropdown>
+                </Col>
+            </Row>
+
+            <Modal
+                title="用户信息"
+                open={hasUser}
+                onCancel={()=>setHasUser(false)}
+                okText="添加用户"
+                footer={null}
+            >
+                    <Input.Group compact>
+                        <Input.Search allowClear style={{ width: '100%' }} onSearch={searchUser} />
                     </Input.Group>
                     <br /><hr /><br />
 
-                    <p>用户名：{this.state.queryUser.username}</p>
-                    <p>昵称：{this.state.queryUser.nickname}</p>
-                    <Button type='primary' onClick={this.addUser} disabled={this.state.queryUser.username == null || this.state.queryUser.username === ''}>添加用户</Button>
+                    <p>用户名：{queryUser.username}</p>
+                    <p>昵称：{queryUser.nickname}</p>
+                    <Button type='primary' onClick={addUser} disabled={queryUser.username == null || queryUser.username === ''}>添加用户</Button>
                     <br /><br /><hr /><br /><br />
 
-                    <p>群信息：{this.state.queryUser.groupName}</p>
-                    <Button type='primary' onClick={this.joinGroup} disabled={this.state.queryUser.groupUuid == null || this.state.queryUser.groupUuid === ''}>添加群</Button>
-                </Modal>
+                    <p>群信息：{queryUser.groupName}</p>
+                    <Button type='primary' onClick={joinGroup} disabled={queryUser.groupUuid == null || queryUser.groupUuid === ''}>添加群</Button>
+            </Modal>
 
-                <Modal title="创建群" open={this.state.showCreateGroup} onCancel={this.handleCancelGroup} onOk={this.createGroup} okText="创建群">
-                    <Form
-                        name="groupForm"
-                        ref={this.groupForm}
-                        layout="vertical"
-                        autoComplete="off"
+            <Modal
+                title="创建群"
+                open={showCreateGroup}
+                onCancel={()=>setShowCreateGroup(false)}
+                onOk={createGroup}
+                okText="创建群"
+            >
+                <Form
+                    name="groupForm"
+                    ref={groupFormRef}
+                    layout="vertical"
+                    autoComplete="off"
+                >
+                    <Form.Item
+                        name="groupName"
+                        label="群名称"
+                        rules={[{ required: true, message: '请输入群名称' }]}
                     >
-                        <Form.Item
-                            name="groupName"
-                            label="群名称"
-                            rules={[{ required: true }]}
-                        >
-                            <Input placeholder="群名称" />
-                        </Form.Item>
-                    </Form>
+                        <Input placeholder="群名称" />
+                    </Form.Item>
 
-                </Modal>
-            </>
-        );
-    }
-}
+                    <Form.Item
+                        name="groupDescribe"
+                        label="群描述"
+                        rules={[{ required: true, message: '请输入群描述' }]}
+                    >
+                        <Input placeholder="群描述" />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="groupAvatar"
+                        label="群头像"
+                    >
+                        {/* <Input hidden={true} value={imageAddr}/> */}
+                    <UploadAvatar objectType="group" handleImgChange = {handleImgChange}/>
+                    </Form.Item>
 
 
-function mapStateToProps(state) {
-    return {
-        user: state.userInfoReducer.user,
-    }
-}
+                </Form>
+            </Modal>
+        </>
+    );
+};
 
-function mapDispatchToProps(dispatch) {
-    return {
-        setUser: (data) => dispatch(actions.setUser(data)),
-    }
-}
+// Since mapStateToProps is not used in the component, we can skip the connect HOC.
+// If Redux actions are still necessary, they can be dispatched via useDispatch as shown above.
 
-UserSearch = connect(mapStateToProps, mapDispatchToProps)(UserSearch)
-
-export default UserSearch
+export default UserSearch;

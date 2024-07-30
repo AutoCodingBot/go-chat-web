@@ -10,6 +10,7 @@ export const REGISTER_URL = HOST + '/user/register'
 export const USER_URL = HOST + '/user/'
 export const USER_NAME_URL = HOST + '/user/name'
 export const USER_LIST_URL = HOST + '/user'
+// export const USER_PROFILE_URL = HOST + '/user'
 
 export const USER_FRIEND_URL = HOST + '/friend'
 

@@ -8,7 +8,7 @@ import {
 } from 'antd';
 import { axiosPostBody } from './util/Request';
 import * as Params from './common/param/Params';
-import { redirect ,useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
     const [registerDrawerVisible, setRegisterDrawerVisible] = useState(false);
@@ -16,7 +16,8 @@ const Login = () => {
 
     useEffect(()=>{
         const _uuid = localStorage.getItem('uuid');
-        if(_uuid){
+        const _accessToken= localStorage.getItem('ACCESS_TOKEN');
+        if(_uuid && _accessToken){
             navigate(`/panel/${_uuid}`);
         }
     },[navigate])
