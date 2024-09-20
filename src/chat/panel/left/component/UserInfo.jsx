@@ -20,7 +20,7 @@ const UserInfo = () => {
     //加载用户信息
     const fetchUserDetails = async () => {
         try {
-            const response = await axiosGet(`${Params.USER_URL}${localStorage.uuid}`);
+            const response = await axiosGet(`${Params.USER_URL}`);
             const updatedUser = {
                 ...response.data,
                 avatar: response.data.avatar ? `${Params.HOST}/file/${response.data.avatar}` : `https://api.dicebear.com/9.x/pixel-art/svg?seed=${response.data.username}`

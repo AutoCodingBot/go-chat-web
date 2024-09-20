@@ -7,9 +7,10 @@ export const HOST = PROTOCOL + IP_PORT;
 
 export const LOGIN_URL = HOST + '/user/login'
 export const REGISTER_URL = HOST + '/user/register'
-export const USER_URL = HOST + '/user/'
+export const USER_URL = HOST + '/user/info'
 export const USER_NAME_URL = HOST + '/user/name'
-export const USER_LIST_URL = HOST + '/user'
+export const USER_LIST_URL = HOST + '/user/friends'
+export const USER_ONLINE_STATUS = HOST + '/user/online-status/'
 // export const USER_PROFILE_URL = HOST + '/user'
 
 export const USER_FRIEND_URL = HOST + '/friend'

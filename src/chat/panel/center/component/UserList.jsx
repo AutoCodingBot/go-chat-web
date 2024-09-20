@@ -12,7 +12,6 @@ const UserList = () => {
     const [chooseUser, setChooseUserState] = useState({});//当前用户card
     const dispatch = useDispatch();
     const userList = useSelector(state => state.panelReducer.userList);
-
     const chooseUserHandler = (value) => {
         //value是在Switch中渲染并提交给redux管理的数据
         // value: {hasUnreadMessage: false, username: 'sam', uuid: 'c0fd020f-fa4d-4379-8f8b-f84a07fadd6a', messageType: 1, avatar: 'http://localhost:8888/file/55f72d82-a814-41fa-bc77-08b05e9b4287.jpg'}
@@ -33,24 +32,23 @@ const UserList = () => {
         removeUnreadMessageDot(value.uuid);
     };
 
-    
     const fetchMessages = useCallback((chooseUser) => {
         const { messageType, toUser, toUsername } = chooseUser;
-        let uuid = localStorage.uuid;
-        if (messageType === 2) {
-            uuid = toUser;
-        }
+        // let uuid = localStorage.uuid;
+        // if (messageType === 2) {
+        //     uuid = toUser;
+        // }
         let data = {
-            Uuid: uuid,
+            Uuid: toUser,
             FriendUsername: toUsername,
             MessageType: messageType
         };
         axiosGet(Params.MESSAGE_URL, data)
             .then(response => {
                 
-                if(response.data){
+                if(response.data.messageList){
                     // console.log('chat detail',response.data)
-                    const comments = response.data.map(item => ({
+                    const comments = response.data.messageList.map(item => ({
                         author: item.fromUsername,
                         avatar: item.avatar ? `${Params.HOST}/file/${item.avatar}` : `https://api.dicebear.com/9.x/pixel-art/svg?seed=${item.fromUsername}`,
                         content: getContentByType(item.contentType, item.url, item.content),
@@ -75,7 +73,7 @@ const UserList = () => {
             default: return content;
         }
     };
-
+    //移除红点
     const removeUnreadMessageDot = useCallback((toUuid) => {
         const updatedList = userList.map(user => {
             if (user.uuid === toUuid) {
@@ -86,6 +84,10 @@ const UserList = () => {
         dispatch(actions.setUserList(updatedList));
     }, [userList, dispatch]);
 
+    const formatUsernameWithStatus = (username, onlineStatus)=> {
+        return onlineStatus ? username : `${username} (Offline)`;
+      }
+      
     return (
         <div id="userList" style={{
             height: `calc(100vh - 125px)`,
@@ -104,8 +106,8 @@ const UserList = () => {
                                 style={{ paddingLeft: 30 ,backgroundColor: chooseUser === item.username ? '#87CEFA' : 'transparent'}}
                                 onClick={() => chooseUserHandler(item)}
                                 avatar= {<Badge dot={item.hasUnreadMessage}><Avatar src={item.avatar || `https://api.dicebear.com/9.x/pixel-art/svg?seed=${item.username}`} /></Badge>}
-                                title={item.username}
-                                description=""
+                                title={formatUsernameWithStatus(item.username,item.onlineStatus)}
+                                description="Latest msg"
                                 // description 用来加载最后一条消息
                             />
                         </List.Item>

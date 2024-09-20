@@ -187,7 +187,10 @@ const UserSearch = () => {
                         label="群头像"
                     >
                         {/* <Input hidden={true} value={imageAddr}/> */}
+
                     <UploadAvatar objectType="group" handleImgChange = {handleImgChange}/>
+
+
                     </Form.Item>
 
 

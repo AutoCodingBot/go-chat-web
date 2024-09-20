@@ -78,7 +78,10 @@ main分支：
 
 
 
-
-## 奇奇怪怪的问题
+## 启动
+ `npm install`
+ 失败?考虑更换镜像源头
+ `npm start`
+ 失败?(digital envelope routines::unsupported)?输入以下命令(完整输入)
  $env:NODE_OPTIONS="--openssl-legacy-provider"  
- #这是一条完整的语句,$也要输入,解决了 error:0308010C:digital envelope routines::unsupported
+ 然后再次启动应用(npm start)

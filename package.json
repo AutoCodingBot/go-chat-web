@@ -25,7 +25,9 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "proto": "npx pbjs -t json-module -w commonjs -o src/chat/proto/proto.js  src/chat/proto/*.proto"
+    "proto": "npx pbjs -t json-module -w commonjs -o src/chat/proto/proto.js  src/chat/proto/*.proto",
+    "preinstall": "npm-force-resolutions"
+
   },
   "eslintConfig": {
     "extends": [
@@ -44,5 +46,12 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "npm-force-resolutions": "^0.0.10",
+    "process": "^0.11.10"
+  },
+  "resolutions": {
+    "react-error-overlay": "6.0.9"
   }
 }

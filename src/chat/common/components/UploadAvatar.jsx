@@ -62,7 +62,7 @@ const UploadAvatar = (props)=>{
             headers={fileUploadHeader}
             // data={{ objectType: props.objectType}}
         >
-            {imageUrl ? <img src={imageUrl} alt="avatar" style={{ width: '40%',position:'absolute' }} /> : loading ? <LoadingOutlined /> : <PlusOutlined />}
+            {imageUrl ? <img src={imageUrl} alt="avatar" style={{ width: '25%',position:'absolute' }} /> : loading ? <LoadingOutlined /> : <PlusOutlined />}
             <div style={{ marginTop: 8 }}>Upload</div>
         </Upload>   
     )

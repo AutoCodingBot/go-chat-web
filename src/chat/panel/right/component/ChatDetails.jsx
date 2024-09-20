@@ -10,7 +10,7 @@ import {
 } from 'antd';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { MoreOutlined } from '@ant-design/icons';
-import { actions } from '../../../redux/module/panel';
+// import { actions } from '../../../redux/module/panel';
 import * as Params from '../../../common/param/Params';
 import { axiosGet } from '../../../util/Request';
 
@@ -28,9 +28,11 @@ const CommentList = ({ comments }) => (
 );
 
 const ChatDetails = () => {
-    const dispatch = useDispatch();
+    // const dispatch = useDispatch();
     const chooseUser = useSelector(state => state.panelReducer.chooseUser);
+    // {toUser: 'affec7bb-8565-4cad-a05f-63a3334c53a2', toUsername: '木兰辞', messageType: 2, avatar: undefined}
     const messageList = useSelector(state => state.panelReducer.messageList);
+    // console.log(chooseUser)
     const [drawerVisible, setDrawerVisible] = useState(false);
     const [groupUsers, setGroupUsers] = useState([]);
 
@@ -63,9 +65,16 @@ const ChatDetails = () => {
     };
 
 
+
     return (
         <>
-            <Badge.Ribbon text={<MoreOutlined onClick={chatDetails} />}>
+        <Badge.Ribbon 
+              text={
+                chooseUser.messageType === 2 ?
+                  <MoreOutlined onClick={chatDetails} /> :
+                  null
+              }
+        >
 
                 <Card title={chooseUser.toUsername} size="large">
                     <div

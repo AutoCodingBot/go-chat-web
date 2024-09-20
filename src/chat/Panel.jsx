@@ -22,7 +22,8 @@ import Right from './panel/right/index'
 import protobuf from './proto/proto'
 import { connect } from 'react-redux'
 import { actions } from './redux/module/panel'
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
+import decodeJwt from './util/ParseJWT';
 
 var socket = null;
 var peer = null;
@@ -90,12 +91,24 @@ class Panel extends React.Component {
     componentDidMount() {
         this.connection()
     }
-
+    validateAuth(){
+        const payload = decodeJwt()
+        if(payload === false || payload.exp < Math.floor(new Date().getTime() / 1000)){
+            return false
+        }
+        return true
+    }
 
     /**
      * websocket连接
      */
     connection = () => {
+
+        //保证是登录状态
+        if(this.validateAuth() === false){
+            console.log("未登录用户")
+            return
+        }
         console.log("Chanel Connecting...")
         peer = new RTCPeerConnection();
         var image = document.getElementById('receiver');

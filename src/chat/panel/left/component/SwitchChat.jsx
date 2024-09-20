@@ -24,14 +24,17 @@ const SwitchChat = () => {
         axiosGet(Params.USER_LIST_URL, data)
             .then(response => {
                 const users = response.data || [];
+                // console.log(users)
                 const userData = users.map(user => ({
                     hasUnreadMessage: false,
                     username: user.username,
+                    onlineStatus:user.onlineStatus,
                     uuid: user.uuid,
                     messageType: 1,
                     avatar: user.avatar ?  
                     `${Params.HOST}/file/${user.avatar}` :
                     `https://api.dicebear.com/9.x/pixel-art/svg?seed=${user.username}`,
+                    "latestMsg":""
                 }));
                 dispatch(actions.setUserList(userData));
             });
